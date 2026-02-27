@@ -181,3 +181,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, suggest feature
 ## License
 
 [MIT](LICENSE)
+
+Copyright (c) 2025 CmdVault contributors
