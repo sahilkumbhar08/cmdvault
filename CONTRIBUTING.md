@@ -4,14 +4,14 @@ Thanks for your interest in contributing.
 
 ## How to contribute
 
-- **Bug reports and feature ideas:** Open an [Issue](https://github.com/YOUR_USERNAME/cmdvault/issues).
+- **Bug reports and feature ideas:** Open an [Issue](https://github.com/sahilkumbhar08/cmdvault/issues).
 - **Code changes:** Open a Pull Request from a fork. Keep changes focused and add a short description.
 
 ## Development setup
 
 1. Clone the repo and run from source:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/cmdvault.git
+   git clone https://github.com/sahilkumbhar08/cmdvault.git
    cd cmdvault
    python3 -m cmdvault.main
    ```
