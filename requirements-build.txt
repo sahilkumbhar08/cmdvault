@@ -1,0 +1,2 @@
+# Optional: only needed to build the standalone executable (build_app.sh / PyInstaller).
+pyinstaller>=6.0

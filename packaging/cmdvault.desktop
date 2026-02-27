@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=CmdVault
+Comment=Personal command knowledge base for terminal commands
+Exec=cmdvault
+Icon=utilities-terminal
+Terminal=false
+Type=Application
+Categories=Utility;Development;
+Keywords=command;clipboard;cheatsheet;terminal;

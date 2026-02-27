@@ -1,0 +1,27 @@
+{
+  "categories": ["k8s", "docker", "git"],
+  "commands": [
+    {
+      "title": "Get pods",
+      "command": "kubectl get pods",
+      "category": "k8s"
+    },
+    {
+      "title": "List containers",
+      "command": "docker ps -a",
+      "category": "docker"
+    },
+    {
+      "title": "Status",
+      "command": "git status",
+      "category": "git"
+    }
+  ],
+  "secrets": [
+    {
+      "title": "API Key",
+      "secret": "your-secret-value-here",
+      "description": "Optional description"
+    }
+  ]
+}
