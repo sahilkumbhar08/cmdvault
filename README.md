@@ -59,7 +59,7 @@ Choose one way to run CmdVault as a normal app.
 Installs to `~/.local` and adds CmdVault to your app menu.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cmdvault.git
+git clone https://github.com/sahilkumbhar08/cmdvault.git
 cd cmdvault
 chmod +x install.sh
 ./install.sh
@@ -177,11 +177,6 @@ Use `import_sample.json` as a template:
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, suggest features, or send patches.
 
 ---
-
-## Before pushing to GitHub
-
-- Replace **YOUR_USERNAME** in this README and in [CONTRIBUTING.md](CONTRIBUTING.md) with your GitHub username (in clone URLs and issue links).
-- Ensure the repo name matches the URLs (e.g. `cmdvault` → `https://github.com/YOUR_USERNAME/cmdvault`).
 
 ## License
 
