@@ -31,7 +31,7 @@
 ## Quick start (run from source)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cmdvault.git
+git clone https://github.com/sahilkumbhar08/cmdvault.git
 cd cmdvault
 python3 -m cmdvault.main
 ```
