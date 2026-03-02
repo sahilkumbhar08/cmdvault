@@ -1,10 +1,9 @@
 # cmdvault/utils.py
 """
-Clipboard and fuzzy search helpers.
-Uses Tkinter clipboard and difflib for fuzzy matching.
+Clipboard and fast search helpers.
+Optimized for responsive search: fast substring + in-order match, no difflib.
 """
 
-import difflib
 from typing import List
 
 
@@ -15,11 +14,10 @@ def copy_to_clipboard(root, text: str) -> None:
     root.update_idletasks()
 
 
-def fuzzy_match(query: str, target: str) -> bool:
-    """Simple fuzzy match: query characters appear in target in order. Case-insensitive."""
-    if not query.strip():
+def _fuzzy_match(q: str, target: str) -> bool:
+    """Query chars appear in target in order. Case-insensitive. Fast."""
+    if not q:
         return True
-    q = query.lower().strip()
     t = target.lower()
     idx = 0
     for c in q:
@@ -30,11 +28,29 @@ def fuzzy_match(query: str, target: str) -> bool:
     return True
 
 
-def fuzzy_score(query: str, target: str) -> float:
-    """Return a similarity score in [0, 1] for ordering results."""
-    if not query.strip():
+def _fast_score(q: str, target: str) -> float:
+    """Fast relevance: substring > startswith > in-order. No SequenceMatcher."""
+    if not q:
         return 1.0
-    return difflib.SequenceMatcher(None, query.lower(), target.lower()).ratio()
+    t = target.lower()
+    if q in t:
+        return 1.0 - (t.find(q) * 0.001)  # prefer earlier match
+    if t.startswith(q):
+        return 0.95
+    if not _fuzzy_match(q, t):
+        return 0.0
+    # In-order match: prefer shorter span and earlier start
+    idx, span = 0, 0
+    start = -1
+    for c in q:
+        pos = t.find(c, idx)
+        if pos == -1:
+            return 0.0
+        if start < 0:
+            start = pos
+        span += pos - idx
+        idx = pos + 1
+    return max(0.1, 0.9 - span * 0.01 - start * 0.001)
 
 
 def filter_commands_fuzzy(
@@ -44,7 +60,7 @@ def filter_commands_fuzzy(
     search_title: bool = True,
     search_command: bool = True,
 ) -> List[dict]:
-    """Filter commands by fuzzy matching on title and/or command. Returns list sorted by relevance."""
+    """Filter by fast substring/fuzzy match. Returns list sorted by relevance. Kept name for API."""
     if not query.strip():
         return list(commands)
     q = query.strip().lower()
@@ -52,12 +68,12 @@ def filter_commands_fuzzy(
     for cmd in commands:
         title = (cmd.get("title") or "").lower()
         command = (cmd.get("command") or "").lower()
-        if search_title and fuzzy_match(q, title):
-            score = fuzzy_score(q, title)
-            scored.append((score, cmd))
-            continue
-        if search_command and fuzzy_match(q, command):
-            score = fuzzy_score(q, command)
-            scored.append((score, cmd))
+        best = 0.0
+        if search_title and _fuzzy_match(q, title):
+            best = max(best, _fast_score(q, title))
+        if search_command and _fuzzy_match(q, command):
+            best = max(best, _fast_score(q, command))
+        if best > 0:
+            scored.append((best, cmd))
     scored.sort(key=lambda x: -x[0])
     return [cmd for _, cmd in scored]

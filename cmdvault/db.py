@@ -49,9 +49,28 @@ def _ensure_schema(conn: sqlite3.Connection) -> None:
             secret TEXT NOT NULL,
             description TEXT
         );
+        CREATE TABLE IF NOT EXISTS notes (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            created_at TEXT
+        );
+        CREATE TABLE IF NOT EXISTS todos (
+            id INTEGER PRIMARY KEY,
+            title TEXT NOT NULL,
+            done INTEGER NOT NULL DEFAULT 0,
+            sort_order INTEGER NOT NULL DEFAULT 0,
+            created_at TEXT
+        );
         INSERT OR IGNORE INTO categories (id, name) VALUES (1, 'general');
     """)
     conn.commit()
+    # Migration: add tags to commands if missing
+    try:
+        conn.execute("ALTER TABLE commands ADD COLUMN tags TEXT")
+        conn.commit()
+    except sqlite3.OperationalError:
+        pass  # column already exists
 
 
 # --- Categories ---
@@ -92,17 +111,28 @@ def list_commands(
     conn: sqlite3.Connection,
     category_id: Optional[int] = None,
 ) -> list:
-    """Return commands as list of dicts: id, title, command, category_id."""
+    """Return commands as list of dicts: id, title, command, category_id, tags."""
+    cols = "id, title, command, category_id"
+    try:
+        conn.execute("SELECT tags FROM commands LIMIT 1")
+        cols = "id, title, command, category_id, tags"
+    except sqlite3.OperationalError:
+        pass
     if category_id is not None:
         cur = conn.execute(
-            "SELECT id, title, command, category_id FROM commands WHERE category_id = ? ORDER BY title",
+            f"SELECT {cols} FROM commands WHERE category_id = ? ORDER BY title",
             (category_id,)
         )
     else:
-        cur = conn.execute(
-            "SELECT id, title, command, category_id FROM commands ORDER BY title"
-        )
-    return [dict(row) for row in cur.fetchall()]
+        cur = conn.execute(f"SELECT {cols} FROM commands ORDER BY title")
+    rows = cur.fetchall()
+    out = []
+    for row in rows:
+        d = dict(row)
+        if "tags" not in d:
+            d["tags"] = ""
+        out.append(d)
+    return out
 
 
 def add_command(
@@ -110,12 +140,20 @@ def add_command(
     title: str,
     command: str,
     category_id: int,
+    tags: Optional[str] = None,
 ) -> int:
-    """Insert a command; return its id."""
-    cur = conn.execute(
-        "INSERT INTO commands (title, command, category_id) VALUES (?, ?, ?)",
-        (title.strip(), command.strip(), category_id)
-    )
+    """Insert a command; return its id. tags: comma-separated string."""
+    tags = (tags or "").strip()
+    try:
+        cur = conn.execute(
+            "INSERT INTO commands (title, command, category_id, tags) VALUES (?, ?, ?, ?)",
+            (title.strip(), command.strip(), category_id, tags)
+        )
+    except sqlite3.OperationalError:
+        cur = conn.execute(
+            "INSERT INTO commands (title, command, category_id) VALUES (?, ?, ?)",
+            (title.strip(), command.strip(), category_id)
+        )
     conn.commit()
     return cur.lastrowid
 
@@ -126,12 +164,20 @@ def update_command(
     title: str,
     command: str,
     category_id: int,
+    tags: Optional[str] = None,
 ) -> None:
     """Update an existing command."""
-    conn.execute(
-        "UPDATE commands SET title = ?, command = ?, category_id = ? WHERE id = ?",
-        (title.strip(), command.strip(), category_id, command_id)
-    )
+    tags = (tags or "").strip()
+    try:
+        conn.execute(
+            "UPDATE commands SET title = ?, command = ?, category_id = ?, tags = ? WHERE id = ?",
+            (title.strip(), command.strip(), category_id, tags, command_id)
+        )
+    except sqlite3.OperationalError:
+        conn.execute(
+            "UPDATE commands SET title = ?, command = ?, category_id = ? WHERE id = ?",
+            (title.strip(), command.strip(), category_id, command_id)
+        )
     conn.commit()
 
 
@@ -189,6 +235,99 @@ def delete_secret(conn: sqlite3.Connection, secret_id: int) -> None:
     conn.commit()
 
 
+# --- Notes ---
+
+def list_notes(conn: sqlite3.Connection) -> list:
+    """Return all notes as list of dicts: id, title, content, created_at."""
+    cur = conn.execute(
+        "SELECT id, title, content, created_at FROM notes ORDER BY id DESC"
+    )
+    return [dict(row) for row in cur.fetchall()]
+
+
+def add_note(conn: sqlite3.Connection, title: str, content: str) -> int:
+    """Insert a note; return its id."""
+    import datetime
+    now = datetime.datetime.utcnow().isoformat() + "Z"
+    cur = conn.execute(
+        "INSERT INTO notes (title, content, created_at) VALUES (?, ?, ?)",
+        (title.strip(), content.strip(), now)
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def update_note(conn: sqlite3.Connection, note_id: int, title: str, content: str) -> None:
+    """Update an existing note."""
+    conn.execute(
+        "UPDATE notes SET title = ?, content = ? WHERE id = ?",
+        (title.strip(), content.strip(), note_id)
+    )
+    conn.commit()
+
+
+def delete_note(conn: sqlite3.Connection, note_id: int) -> None:
+    """Delete a note by id."""
+    conn.execute("DELETE FROM notes WHERE id = ?", (note_id,))
+    conn.commit()
+
+
+# --- Todos (daily tasks) ---
+
+def list_todos(conn: sqlite3.Connection) -> list:
+    """Return all todos as list of dicts: id, title, done, sort_order, created_at. Pending first, then done."""
+    cur = conn.execute(
+        "SELECT id, title, done, sort_order, created_at FROM todos ORDER BY done ASC, sort_order ASC, id ASC"
+    )
+    return [dict(row) for row in cur.fetchall()]
+
+
+def add_todo(conn: sqlite3.Connection, title: str) -> int:
+    """Insert a todo; return its id."""
+    import datetime
+    now = datetime.datetime.utcnow().isoformat() + "Z"
+    cur = conn.execute(
+        "INSERT INTO todos (title, done, sort_order, created_at) VALUES (?, 0, 0, ?)",
+        (title.strip(), now)
+    )
+    conn.commit()
+    return cur.lastrowid
+
+
+def update_todo(conn: sqlite3.Connection, todo_id: int, title: Optional[str] = None, done: Optional[int] = None) -> None:
+    """Update a todo: title and/or done."""
+    if title is not None and done is not None:
+        conn.execute("UPDATE todos SET title = ?, done = ? WHERE id = ?", (title.strip(), done, todo_id))
+    elif title is not None:
+        conn.execute("UPDATE todos SET title = ? WHERE id = ?", (title.strip(), todo_id))
+    elif done is not None:
+        conn.execute("UPDATE todos SET done = ? WHERE id = ?", (done, todo_id))
+    conn.commit()
+
+
+def toggle_todo_done(conn: sqlite3.Connection, todo_id: int) -> None:
+    """Flip the done flag for a todo."""
+    cur = conn.execute("SELECT done FROM todos WHERE id = ?", (todo_id,))
+    row = cur.fetchone()
+    if row:
+        new_done = 1 if row[0] == 0 else 0
+        conn.execute("UPDATE todos SET done = ? WHERE id = ?", (new_done, todo_id))
+        conn.commit()
+
+
+def delete_todo(conn: sqlite3.Connection, todo_id: int) -> None:
+    """Delete a todo by id."""
+    conn.execute("DELETE FROM todos WHERE id = ?", (todo_id,))
+    conn.commit()
+
+
+def delete_completed_todos(conn: sqlite3.Connection) -> int:
+    """Delete all todos where done=1. Returns number deleted."""
+    cur = conn.execute("DELETE FROM todos WHERE done = 1")
+    conn.commit()
+    return cur.rowcount
+
+
 # --- Settings (e.g. dark mode) ---
 
 def get_setting(conn: sqlite3.Connection, key: str) -> Optional[str]:
@@ -205,3 +344,28 @@ def set_setting(conn: sqlite3.Connection, key: str, value: str) -> None:
         (key, value)
     )
     conn.commit()
+
+
+def get_recent_searches(conn: sqlite3.Connection, max_count: int = 10) -> list:
+    """Return list of recent search strings (newest first)."""
+    val = get_setting(conn, "recent_searches")
+    if not val:
+        return []
+    try:
+        import json
+        out = json.loads(val)
+        return (out or [])[:max_count]
+    except Exception:
+        return []
+
+
+def add_recent_search(conn: sqlite3.Connection, query: str) -> None:
+    """Prepend query to recent searches, dedupe, keep max 10."""
+    import json
+    query = (query or "").strip()
+    if not query:
+        return
+    current = get_recent_searches(conn, max_count=20)
+    current = [q for q in current if q != query]
+    current.insert(0, query)
+    set_setting(conn, "recent_searches", json.dumps(current[:10]))

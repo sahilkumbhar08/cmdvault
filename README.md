@@ -1,6 +1,6 @@
 # CmdVault
 
-**A desktop app to store, search, and copy terminal commands.** Organize commands by category, fuzzy-search, and paste into your terminal with one click or double-click.
+**A desktop app to store, search, and copy terminal commands.** Developer-focused: dark theme, Notes, Todo, command tags, and fast search. Organize commands by category, use global search with recent history, and paste into your terminal with one click or double-click.
 
 - **Platform:** Linux (tested on Fedora)
 - **Stack:** Python 3.9+, Tkinter, SQLite — no extra dependencies for running
@@ -31,7 +31,7 @@
 ## Quick start (run from source)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cmdvault.git
+git clone https://github.com/sahilkumbhar08/cmdvault.git
 cd cmdvault
 python3 -m cmdvault.main
 ```
@@ -59,7 +59,7 @@ Choose one way to run CmdVault as a normal app.
 Installs to `~/.local` and adds CmdVault to your app menu.
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/cmdvault.git
+git clone https://github.com/sahilkumbhar08/cmdvault.git
 cd cmdvault
 chmod +x install.sh
 ./install.sh
@@ -73,18 +73,18 @@ Then:
   export PATH="$HOME/.local/bin:$PATH"
   ```
 
-See [INSTALL.md](INSTALL.md) for more detail and troubleshooting.
+See [docs/INSTALL.md](docs/INSTALL.md) for more detail and troubleshooting.
 
 ### Option B — RPM (system-wide)
 
-For Fedora, build and install an RPM:
+For Fedora, build and install an RPM (use version 2.0 for current release):
 
 ```bash
-cp -r cmdvault cmdvault-1.0
-tar czvf cmdvault-1.0.tar.gz --exclude=__pycache__ --exclude=*.pyc cmdvault-1.0
+cp -r cmdvault cmdvault-2.0
+tar czvf cmdvault-2.0.tar.gz --exclude=__pycache__ --exclude=*.pyc cmdvault-2.0
 sudo dnf install rpm-build
-rpmbuild -ta cmdvault-1.0.tar.gz
-sudo dnf install ~/rpmbuild/RPMS/noarch/cmdvault-1.0-1.fc*.noarch.rpm
+rpmbuild -ta cmdvault-2.0.tar.gz
+sudo dnf install ~/rpmbuild/RPMS/noarch/cmdvault-2.0-1.fc*.noarch.rpm
 ```
 
 Then run **CmdVault** from the app menu or the `cmdvault` command.
@@ -110,24 +110,30 @@ Copy `dist/CmdVault` to e.g. `~/bin` to run it from anywhere. Data is still in `
 cmdvault/
 ├── cmdvault/              # Main package
 │   ├── __init__.py
-│   ├── __main__.py       # Entry for python3 -m cmdvault & PyInstaller
+│   ├── __main__.py        # Entry for python3 -m cmdvault & PyInstaller
 │   ├── main.py            # App entry, Tk window
-│   ├── ui.py              # UI (sidebar, cards, search, dialogs)
-│   ├── db.py              # SQLite (categories, commands, secrets, settings)
-│   ├── themes.py          # Light/dark theme
-│   └── utils.py           # Clipboard, fuzzy search
+│   ├── ui.py              # UI (tabs, sidebar, cards, search, dialogs)
+│   ├── db.py              # SQLite (categories, commands, secrets, notes, todos, settings)
+│   ├── themes.py          # Developer dark (Slate/Zinc) + light theme
+│   └── utils.py           # Clipboard, fast search filter
+├── docs/
+│   └── INSTALL.md         # Detailed install and troubleshooting
+├── samples/
+│   └── import_sample.json # Example for File → Import (DevStack/OpenStack commands)
+├── tests/
+│   ├── __init__.py
+│   └── test_db.py         # Basic DB tests (no GUI)
 ├── packaging/
 │   └── cmdvault.desktop   # Desktop entry for app menu
 ├── run_cmdvault.py        # Convenience launcher
 ├── install.sh             # Install to ~/.local
 ├── build_app.sh           # Build standalone binary (PyInstaller)
-├── cmdvault.spec          # RPM spec (Fedora)
+├── cmdvault.spec          # RPM spec (Fedora), version 2.0
 ├── cmdvault_app.spec      # PyInstaller spec
-├── import_sample.json     # Example for File → Import
-├── requirements.txt      # Empty (stdlib only)
+├── requirements.txt       # Empty (stdlib only)
 ├── requirements-build.txt # Optional: pyinstaller for build_app.sh
+├── CHANGELOG.md           # Version history
 ├── README.md
-├── INSTALL.md
 ├── CONTRIBUTING.md
 ├── LICENSE
 └── .gitignore
@@ -139,13 +145,16 @@ cmdvault/
 
 **File → Import from file...** loads commands and secrets from a JSON file.
 
-Use `import_sample.json` as a template:
+Use **samples/import_sample.json** as a template. It includes sample categories (k8s, docker, git, **devstack**, **openstack**) and many ready-to-use commands (including DevStack and OpenStack CLI).
+
+**Format:**
 
 ```json
 {
-  "categories": ["k8s", "docker"],
+  "categories": ["k8s", "docker", "devstack"],
   "commands": [
-    { "title": "Get pods", "command": "kubectl get pods", "category": "k8s" }
+    { "title": "Get pods", "command": "kubectl get pods", "category": "k8s" },
+    { "title": "DevStack stack", "command": "./stack.sh", "category": "devstack", "tags": "Production" }
   ],
   "secrets": [
     { "title": "API Key", "secret": "your-secret", "description": "Optional" }
@@ -154,21 +163,33 @@ Use `import_sample.json` as a template:
 ```
 
 - **categories** (optional): category names to create if missing  
-- **commands**: `{ "title", "command", "category" }`; category is created if needed  
+- **commands**: `{ "title", "command", "category" }`; optional **"tags"** (comma-separated, e.g. `"Production, Debug"`)  
 - **secrets**: `{ "title", "secret", "description" }` (description optional)
 
 ---
 
 ## Features
 
-- **Categories** in the left sidebar (add / delete with confirmation)
-- **Commands:** title, command, category; cards with Copy, Edit, Delete
-- **Double-click** a row to copy the command to the clipboard
-- **Copy** via button, right-click menu, **Ctrl+C**, or **Enter** when a row is selected
-- **Fuzzy search** on title and command (live)
-- **Secrets** tab for API keys and other secrets (masked, one-click copy)
-- **Dark mode:** View → Dark Mode (saved)
-- **Shortcuts:** Ctrl+N (add command), Ctrl+Shift+N (add category), Ctrl+F (focus search), Ctrl+Q (quit)
+- **Developer Tool theme:** Slate/Zinc dark theme by default; Inter + JetBrains Mono typography. Toggle light mode in View → Dark Mode.
+- **Tabs:** **Commands** | **Secrets** | **Notes** | **Todo** in one app.
+- **Commands:** Categories in sidebar; **tags** (e.g. Production, Debug) as colored chips; **ghost actions** (Copy / Edit / Delete) on hover; double-click to copy. **Bulk select** with checkboxes and **Bulk Delete** / **Bulk Export**.
+- **Global search:** Search bar in the header (available from any tab). **Universal search** across all categories; **recent searches** dropdown. **Fast search** with in-memory cache and capped results for responsiveness.
+- **Secrets:** Masked by default; **Show** to reveal; copy with one click. Toast: **“Copied to clipboard”** instead of status bar.
+- **Notes:** Two-column grid; add / edit / delete notes (title + content). **Copy** (content only, no title) and **Copy with title** (right-click menu).
+- **Todo:** Daily task list; **segment filter** (All | Pending | Done); double-click to mark done; **Clear completed**.
+- **Shortcuts:** Ctrl+N (add command), Ctrl+Shift+N (add category), Ctrl+F (focus search), Ctrl+Q (quit).
+
+---
+
+## Development
+
+Run tests from project root (no pytest required):
+
+```bash
+python3 tests/test_db.py
+```
+
+With pytest: `python3 -m pytest tests/ -v`
 
 ---
 
@@ -177,11 +198,6 @@ Use `import_sample.json` as a template:
 See [CONTRIBUTING.md](CONTRIBUTING.md) for how to report issues, suggest features, or send patches.
 
 ---
-
-## Before pushing to GitHub
-
-- Replace **YOUR_USERNAME** in this README and in [CONTRIBUTING.md](CONTRIBUTING.md) with your GitHub username (in clone URLs and issue links).
-- Ensure the repo name matches the URLs (e.g. `cmdvault` → `https://github.com/YOUR_USERNAME/cmdvault`).
 
 ## License
 

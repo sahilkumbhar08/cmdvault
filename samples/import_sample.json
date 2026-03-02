@@ -1,0 +1,40 @@
+{
+  "categories": [
+    "k8s",
+    "docker",
+    "git",
+    "devstack",
+    "openstack"
+  ],
+  "commands": [
+    {"title": "Get pods", "command": "kubectl get pods", "category": "k8s"},
+    {"title": "List containers", "command": "docker ps -a", "category": "docker"},
+    {"title": "Status", "command": "git status", "category": "git"},
+    {"title": "DevStack: run stack", "command": "./stack.sh", "category": "devstack"},
+    {"title": "DevStack: unstack", "command": "./unstack.sh", "category": "devstack"},
+    {"title": "DevStack: clean", "command": "./clean.sh", "category": "devstack"},
+    {"title": "DevStack: restart all", "command": "./unstack.sh && ./stack.sh", "category": "devstack"},
+    {"title": "DevStack: minimal local.conf", "command": "[[local|localrc]]\nADMIN_PASSWORD=secret\nDATABASE_PASSWORD=$ADMIN_PASSWORD\nRABBIT_PASSWORD=$ADMIN_PASSWORD\nSERVICE_PASSWORD=$ADMIN_PASSWORD", "category": "devstack"},
+    {"title": "DevStack: single node minimal", "command": "[[local|localrc]]\nFIXED_RANGE=10.0.0.0/24\nADMIN_PASSWORD=secret\nDATABASE_PASSWORD=$ADMIN_PASSWORD\nRABBIT_PASSWORD=$ADMIN_PASSWORD\nSERVICE_PASSWORD=$ADMIN_PASSWORD\nSERVICE_TOKEN=$ADMIN_PASSWORD\n\n# Disable optional services for faster stack\ndisable_all_services\nenable_service key mysql s3\nenable_service n-api n-crt n-obj n-cond n-cauth n-sch n-novnc n-cproxy\nenable_service g-api g-reg\nenable_service c-api c-sch c-vol cinder", "category": "devstack"},
+    {"title": "DevStack: cinder-volume log (journalctl)", "command": "sudo journalctl -u devstack@c-vol -f", "category": "devstack"},
+    {"title": "DevStack: nova-compute log", "command": "sudo journalctl -u devstack@n-cpu -f", "category": "devstack"},
+    {"title": "DevStack: nova-api log", "command": "sudo journalctl -u devstack@n-api -f", "category": "devstack"},
+    {"title": "DevStack: list screen sessions", "command": "screen -ls", "category": "devstack"},
+    {"title": "DevStack: rejoin stack screen", "command": "screen -r stack", "category": "devstack"},
+    {"title": "DevStack: tail stack log", "command": "tail -f /opt/stack/logs/stack.sh.log", "category": "devstack"},
+    {"title": "DevStack: source openstack env", "command": "source /opt/stack/devstack/openrc admin admin", "category": "devstack"},
+    {"title": "DevStack: reinstall single service (e.g. c-vol)", "command": "cd /opt/stack/devstack && ./unstack.sh && ./stack.sh", "category": "devstack"},
+    {"title": "OpenStack: list instances", "command": "openstack server list", "category": "openstack"},
+    {"title": "OpenStack: list images", "command": "openstack image list", "category": "openstack"},
+    {"title": "OpenStack: list volumes", "command": "openstack volume list", "category": "openstack"},
+    {"title": "OpenStack: list flavors", "command": "openstack flavor list", "category": "openstack"},
+    {"title": "OpenStack: create volume", "command": "openstack volume create --size 1 myvol", "category": "openstack"},
+    {"title": "OpenStack: boot VM", "command": "openstack server create --image cirros --flavor m1.tiny myvm", "category": "openstack"},
+    {"title": "Nova: list VMs", "command": "nova list", "category": "openstack"},
+    {"title": "Glance: list images", "command": "glance image-list", "category": "openstack"},
+    {"title": "Cinder: list volumes", "command": "cinder list", "category": "openstack"}
+  ],
+  "secrets": [
+    {"title": "API Key", "secret": "your-secret-value-here", "description": "Optional description"}
+  ]
+}

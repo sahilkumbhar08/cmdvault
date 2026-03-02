@@ -33,4 +33,4 @@
      ```
      Then check the menu again.
 
-Data (commands and secrets) is stored in `~/.local/share/cmdvault/cmdvault.db`.
+Data (commands, secrets, notes, and todos) is stored in `~/.local/share/cmdvault/cmdvault.db`.

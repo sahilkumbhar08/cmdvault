@@ -1,8 +1,8 @@
 # CmdVault RPM spec file for Fedora Linux
-# Build: rpmbuild -ta cmdvault-1.0.tar.gz (tarball contains cmdvault-1.0/ with this spec and cmdvault/)
+# Build: rpmbuild -ta cmdvault-2.0.tar.gz (tarball contains cmdvault-2.0/ with this spec and cmdvault/)
 
 Name:       cmdvault
-Version:    1.0
+Version:    2.0
 Release:    1%{?dist}
 Summary:    Personal command knowledge base for terminal commands
 License:    MIT
@@ -47,5 +47,8 @@ install -m 644 packaging/cmdvault.desktop %{buildroot}%{_datadir}/applications/
 %{_datadir}/applications/cmdvault.desktop
 
 %changelog
+* Fri Feb 27 2026 - 2.0-1
+- Developer Tool dark theme (Slate/Zinc), Notes & Todo tabs
+- Command tags, toasts, bulk actions, faster search, DevStack sample
 * Fri Feb 28 2026 - 1.0-1
 - Initial package

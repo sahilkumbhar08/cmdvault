@@ -44,3 +44,6 @@ Thumbs.db
 # Project-specific (build output stays in dist/)
 dist/
 build/
+
+# Local export / user data (do not commit)
+commands.json
